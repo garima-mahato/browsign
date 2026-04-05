@@ -1,5 +1,7 @@
 # ✍ Browsign
 
+[![Watch the video](https://img.youtube.com/vi/WZsS0ORsB0k/0.jpg)](https://www.youtube.com/watch?v=WZsS0ORsB0k)
+
 > Fill, annotate, and sign PDF documents directly in your browser tab — no uploads, no accounts, no servers.
 
 ![Version](https://img.shields.io/badge/version-1.0.1-d4820a?style=flat-square)
