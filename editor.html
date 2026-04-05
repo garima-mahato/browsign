@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browsign — Editor</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --ink: #1a1209;
+      --cream: #f5f0e8;
+      --amber: #d4820a;
+      --amber-light: #f5b942;
+      --sage: #5a7a5a;
+      --rust: #c0441a;
+      --paper: #faf7f2;
+      --border: #d4c9b0;
+      --toolbar-h: 56px;
+      --sidebar-w: 240px;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: 'DM Mono', monospace;
+      background: #2a2218;
+      color: var(--ink);
+    }
+
+    /* ── TOOLBAR ── */
+    #toolbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--toolbar-h);
+      background: var(--ink);
+      display: flex;
+      align-items: center;
+      gap: 0;
+      z-index: 100;
+      border-bottom: 2px solid var(--amber);
+    }
+
+    .toolbar-brand {
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-right: 1px solid #333;
+      height: 100%;
+    }
+
+    .brand-logo {
+      width: 26px; height: 26px;
+      background: var(--amber);
+      border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+    }
+
+    .brand-name {
+      font-family: 'Fraunces', serif;
+      color: var(--cream);
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+
+    .toolbar-doc-name {
+      padding: 0 16px;
+      font-size: 11px;
+      color: #8a7f6e;
+      border-right: 1px solid #333;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      max-width: 220px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .toolbar-tools {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 0 12px;
+      flex: 1;
+    }
+
+    .tool-group {
+      display: flex;
+      align-items: center;
+      gap: 1px;
+      padding: 0 8px;
+      border-right: 1px solid #333;
+    }
+
+    .tool-group:last-child { border-right: none; }
+
+    .tool-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 6px 10px;
+      border: none;
+      background: transparent;
+      color: #a09080;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.15s;
+      font-family: 'DM Mono', monospace;
+      font-size: 8px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .tool-btn .icon {
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .tool-btn:hover {
+      background: #2a2015;
+      color: var(--cream);
+    }
+
+    .tool-btn.active {
+      background: var(--amber);
+      color: white;
+    }
+
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 16px;
+      border-left: 1px solid #333;
+    }
+
+    .action-btn {
+      padding: 7px 14px;
+      border: none;
+      border-radius: 4px;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.05em;
+    }
+
+    .action-btn.save {
+      background: var(--sage);
+      color: white;
+    }
+
+    .action-btn.save:hover { background: #4a6a4a; }
+
+    .action-btn.download {
+      background: var(--amber);
+      color: white;
+    }
+
+    .action-btn.download:hover { background: #b8700a; }
+
+    /* ── LAYOUT ── */
+    #main {
+      display: flex;
+      margin-top: var(--toolbar-h);
+      height: calc(100vh - var(--toolbar-h));
+    }
+
+    /* ── SIDEBAR ── */
+    #sidebar {
+      width: var(--sidebar-w);
+      background: var(--paper);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .sidebar-section {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-label {
+      font-size: 8px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #8a7f6e;
+      margin-bottom: 10px;
+    }
+
+    /* Signature pad in sidebar */
+    #sigPadContainer {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: white;
+      overflow: hidden;
+    }
+
+    #sigCanvas {
+      display: block;
+      width: 100%;
+      height: 90px;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    .sig-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .sig-btn {
+      flex: 1;
+      padding: 6px;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      cursor: pointer;
+      background: var(--cream);
+      color: var(--ink);
+      transition: all 0.15s;
+      text-align: center;
+    }
+
+    .sig-btn:hover { border-color: var(--amber); color: var(--amber); }
+
+    .sig-btn.place {
+      background: var(--amber);
+      border-color: var(--amber);
+      color: white;
+    }
+
+    .sig-btn.place:hover { background: #b8700a; }
+
+    /* Text options */
+    .text-options { display: flex; flex-direction: column; gap: 6px; }
+
+    .opt-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .opt-label {
+      font-size: 9px;
+      color: #8a7f6e;
+      width: 40px;
+    }
+
+    .opt-input {
+      flex: 1;
+      padding: 4px 6px;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      background: var(--cream);
+      outline: none;
+    }
+
+    .opt-input:focus { border-color: var(--amber); }
+
+    .color-swatches {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .swatch {
+      width: 20px; height: 20px;
+      border-radius: 3px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.15s;
+    }
+
+    .swatch.active, .swatch:hover { border-color: var(--ink); }
+
+    /* Page thumbnails */
+    #thumbList {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .thumb-item {
+      cursor: pointer;
+      border: 2px solid transparent;
+      border-radius: 4px;
+      overflow: hidden;
+      transition: border-color 0.15s;
+      background: white;
+    }
+
+    .thumb-item:hover { border-color: var(--amber-light); }
+    .thumb-item.active { border-color: var(--amber); }
+
+    .thumb-label {
+      font-size: 9px;
+      color: #8a7f6e;
+      text-align: center;
+      padding: 3px 0;
+      background: #f0ece4;
+    }
+
+    .thumb-canvas { display: block; width: 100%; }
+
+    /* ── CANVAS AREA ── */
+    #canvasArea {
+      flex: 1;
+      overflow: auto;
+      background: #3a3025;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px;
+      gap: 20px;
+    }
+
+    .page-wrapper {
+      position: relative;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+      background: white;
+      cursor: crosshair;
+    }
+
+    .page-canvas { display: block; }
+
+    .page-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    /* Annotations rendered on overlay */
+    .annotation {
+      position: absolute;
+      pointer-events: all;
+      cursor: move;
+      user-select: none;
+    }
+
+    .annotation.text-ann {
+      border: 1px dashed transparent;
+      min-width: 60px;
+      min-height: 30px;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      overflow: visible;
+    }
+
+    .annotation.text-ann.selected,
+    .annotation.text-ann:hover {
+      border-color: var(--amber);
+      background: rgba(212,130,10,0.04);
+    }
+
+    .drag-bar {
+      height: 10px;
+      background: transparent;
+      cursor: grab;
+      flex-shrink: 0;
+      border-radius: 2px 2px 0 0;
+    }
+
+    .drag-bar:hover {
+      background: rgba(212,130,10,0.25);
+    }
+
+    .drag-bar:active {
+      cursor: grabbing;
+    }
+
+    .text-inner {
+      flex: 1;
+      padding: 2px 4px 4px;
+      font-family: 'DM Mono', monospace;
+      outline: none;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 20px;
+      cursor: text;
+    }
+
+    .annotation.sig-ann {
+      border: 1px dashed transparent;
+    }
+
+    .annotation.sig-ann.selected,
+    .annotation.sig-ann:hover {
+      border-color: var(--amber);
+    }
+
+    .annotation.sig-ann img {
+      width: 100%; height: 100%;
+      display: block;
+    }
+
+    .annotation .delete-handle {
+      position: absolute;
+      top: -10px; right: -10px;
+      width: 18px; height: 18px;
+      background: var(--rust);
+      color: white;
+      border-radius: 50%;
+      font-size: 10px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 10;
+      line-height: 1;
+    }
+
+    .annotation:hover .delete-handle,
+    .annotation.selected .delete-handle {
+      display: flex;
+    }
+
+    .annotation .resize-handle {
+      position: absolute;
+      bottom: -5px; right: -5px;
+      width: 12px; height: 12px;
+      background: var(--amber);
+      border-radius: 2px;
+      cursor: se-resize;
+      display: none;
+    }
+
+    .annotation:hover .resize-handle,
+    .annotation.selected .resize-handle {
+      display: block;
+    }
+
+    /* Page label above each page */
+    .page-label {
+      font-size: 10px;
+      color: #8a7f6e;
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.08em;
+      margin-bottom: -12px;
+    }
+
+    /* Highlight mode cursor */
+    .page-wrapper.tool-highlight { cursor: text; }
+    .page-wrapper.tool-text { cursor: text; }
+    .page-wrapper.tool-sign { cursor: crosshair; }
+
+    /* Loading */
+    #loadingOverlay {
+      position: fixed;
+      inset: 0;
+      background: #2a2218;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      gap: 16px;
+    }
+
+    .loading-logo {
+      font-family: 'Fraunces', serif;
+      font-size: 32px;
+      color: var(--amber);
+      font-weight: 600;
+    }
+
+    .loading-bar {
+      width: 200px;
+      height: 2px;
+      background: #333;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .loading-fill {
+      height: 100%;
+      background: var(--amber);
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    .loading-text {
+      font-size: 10px;
+      color: #8a7f6e;
+      letter-spacing: 0.1em;
+    }
+
+    /* Toast notification */
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--ink);
+      color: var(--cream);
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 11px;
+      border-left: 3px solid var(--amber);
+      transform: translateY(60px);
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 200;
+    }
+
+    #toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .hidden { display: none !important; }
+
+    /* Highlight annotation */
+    .annotation.highlight-ann {
+      background: rgba(244, 184, 66, 0.35);
+      border: 1px dashed rgba(212,130,10,0.5);
+      pointer-events: all;
+    }
+
+    /* Tab bar inside sidebar for sections */
+    .sidebar-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-tab {
+      flex: 1;
+      padding: 8px;
+      text-align: center;
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      color: #8a7f6e;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .sidebar-tab.active {
+      color: var(--amber);
+      border-bottom-color: var(--amber);
+    }
+
+    .sidebar-panel { display: none; }
+    .sidebar-panel.active { display: block; }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d4c9b0; border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay">
+  <div class="loading-logo">✍ Browsign</div>
+  <div class="loading-bar"><div class="loading-fill" id="loadFill"></div></div>
+  <div class="loading-text" id="loadText">Loading PDF engine…</div>
+</div>
+
+<!-- TOOLBAR -->
+<div id="toolbar">
+  <div class="toolbar-brand">
+    <div class="brand-logo">✍</div>
+    <span class="brand-name">Browsign</span>
+  </div>
+  <div class="toolbar-doc-name" id="docName">document.pdf</div>
+
+  <div class="toolbar-tools">
+    <div class="tool-group">
+      <button class="tool-btn active" data-tool="select" title="Select & Move">
+        <span class="icon">↖</span>Select
+      </button>
+      <button class="tool-btn" data-tool="text" title="Add Text">
+        <span class="icon">T</span>Text
+      </button>
+      <button class="tool-btn" data-tool="sign" title="Place Signature">
+        <span class="icon">✍</span>Sign
+      </button>
+      <button class="tool-btn" data-tool="highlight" title="Highlight Text">
+        <span class="icon">▌</span>Highlight
+      </button>
+    </div>
+
+    <div class="tool-group">
+      <button class="tool-btn" id="undoBtn" title="Undo">
+        <span class="icon">↩</span>Undo
+      </button>
+      <button class="tool-btn" id="redoBtn" title="Redo">
+        <span class="icon">↪</span>Redo
+      </button>
+    </div>
+
+    <div class="tool-group">
+      <button class="tool-btn" id="zoomOut">
+        <span class="icon">−</span>Zoom Out
+      </button>
+      <button class="tool-btn" id="zoomReset">
+        <span class="icon">⊙</span>100%
+      </button>
+      <button class="tool-btn" id="zoomIn">
+        <span class="icon">+</span>Zoom In
+      </button>
+    </div>
+  </div>
+
+  <div class="toolbar-right">
+    <button class="action-btn save" id="saveBtn">💾 Save</button>
+    <button class="action-btn download" id="downloadBtn">⬇ Download PDF</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sidebar-tabs">
+      <div class="sidebar-tab active" data-panel="tools">Tools</div>
+      <div class="sidebar-tab" data-panel="pages">Pages</div>
+    </div>
+
+    <!-- Tools Panel -->
+    <div class="sidebar-panel active" id="toolsPanel">
+      <!-- Signature Pad -->
+      <div class="sidebar-section">
+        <div class="sidebar-label">Signature</div>
+        <div id="sigPadContainer">
+          <canvas id="sigCanvas" width="208" height="90"></canvas>
+        </div>
+        <div class="sig-actions">
+          <button class="sig-btn" id="clearSig">Clear</button>
+          <button class="sig-btn" id="typeSig">Type</button>
+          <button class="sig-btn place" id="placeSig">Place →</button>
+        </div>
+      </div>
+
+      <!-- Text Options -->
+      <div class="sidebar-section" id="textOptionsSection">
+        <div class="sidebar-label">Text Options</div>
+        <div class="text-options">
+          <div class="opt-row">
+            <span class="opt-label">Size</span>
+            <input type="number" class="opt-input" id="fontSize" value="14" min="6" max="72">
+          </div>
+          <div class="opt-row">
+            <span class="opt-label">Color</span>
+            <div class="color-swatches" id="colorSwatches">
+              <div class="swatch active" data-color="#1a1209" style="background:#1a1209"></div>
+              <div class="swatch" data-color="#c0441a" style="background:#c0441a"></div>
+              <div class="swatch" data-color="#1a5a2a" style="background:#1a5a2a"></div>
+              <div class="swatch" data-color="#1a3a7a" style="background:#1a3a7a"></div>
+              <div class="swatch" data-color="#888888" style="background:#888888"></div>
+              <div class="swatch" data-color="#d4820a" style="background:#d4820a"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pages Panel -->
+    <div class="sidebar-panel" id="pagesPanel">
+      <div id="thumbList"></div>
+    </div>
+  </div>
+
+  <!-- CANVAS AREA -->
+  <div id="canvasArea" id="canvasArea"></div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script src="pdf.min.js"></script>
+<script src="editor.js"></script>
+</body>
+</html>
